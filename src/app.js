@@ -18,20 +18,13 @@ function app(event, context, callback) {
     .then(id => userId = id)
     .then(connect)
     .then(db => {
-      return handleRequest(db, event, callback);
+      return handleRequest(db, userId, event, callback);
     })
     .catch(err => callback(err));
-
-  MongoClient.connect(MONGO_URL, function (err, db) {
-    if (err) {
-      return callback(err);
-    }
-
-
   });
 }
 
-function handleRequest(db, event, callback) {
+function handleRequest(db, userId, event, callback) {
   switch (event.context.httpMethod) {
     case 'POST':
       return note.addNote(db, event.bodyJson)
