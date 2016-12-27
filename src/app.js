@@ -11,23 +11,22 @@ function app(event, context, callback) {
       error: 'Not a valid event object'
     });
   }
-  const noteId = util.getIdFromPath(event.params.path.proxy);
+
   let userId;
 
   return auth(event.params.header.Authorization)
     .then(id => userId = id)
     .then(connect)
-    .then(db => {
-      return handleRequest(db, userId, event, callback);
-    })
+    .then(db => handleRequest(db, userId, event, callback))
     .catch(err => callback(err));
-  });
 }
 
 function handleRequest(db, userId, event, callback) {
+  const noteId = util.getIdFromPath(event.params.path.proxy);
+
   switch (event.context.httpMethod) {
     case 'POST':
-      return note.addNote(db, event.bodyJson)
+      return note.addNote(db, userId, event.bodyJson)
         .then(res => respondAndClose(db, callback, null, res))
         .catch(err => respondAndClose(db, callback, err, null));
       break;
@@ -35,7 +34,7 @@ function handleRequest(db, userId, event, callback) {
       if (!noteId) {
         return respondAndClose(db, callback, 'Missing id parameter', null);
       }
-      return note.updateNote(db, noteId, event.bodyJson)
+      return note.updateNote(db, userId, noteId, event.bodyJson)
         .then(res => respondAndClose(db, callback, null, res))
         .catch(err => respondAndClose(db, callback, err, null));
       break;
@@ -43,12 +42,12 @@ function handleRequest(db, userId, event, callback) {
       if (!noteId) {
         return respondAndClose(db, callback, 'Missing id parameter', null);
       }
-      return note.deleteNote(db, noteId)
+      return note.deleteNote(db, userId, noteId)
         .then(res => respondAndClose(db, callback, null, res))
         .catch(err => respondAndClose(db, callback, err, null));
       break;
     case 'GET':
-      return note.getNotes(db)
+      return note.getNotes(db, userId)
         .then(res => respondAndClose(db, callback, null, res))
         .catch(err => respondAndClose(db, callback, err, null));
     default:
