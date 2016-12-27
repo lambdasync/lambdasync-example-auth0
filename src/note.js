@@ -33,20 +33,23 @@ function getNotes(db, userId) {
   });
 }
 
-function deleteNote(db, userId, id) {
-  if (!id) {
-    return Promise.reject('Missing id');
+function deleteNote(db, userId, noteId) {
+  if (!noteId) {
+    return Promise.reject('Missing note id');
   }
-  return new Promise((resolve, reject) => {
-    db
-      .collection(CONSTANTS.COLLECTION_NOTES)
-      .deleteOne({id}, err => {
-        if (err) {
-          return reject(err);
-        }
-        return resolve(JSON.stringify(SUCCESS));
-      });
-  });
+
+  // Make sure we have access to the note we are trying to delete
+  return getNote(db, noteId, userId)
+    .then(() => new Promise((resolve, reject) => {
+      db
+        .collection(CONSTANTS.COLLECTION_NOTES)
+        .deleteOne({id: noteId}, err => {
+          if (err) {
+            return reject(err);
+          }
+          return resolve(JSON.stringify(SUCCESS));
+        });
+    }));
 }
 
 function updateNote(db, userId, noteId, note) {
