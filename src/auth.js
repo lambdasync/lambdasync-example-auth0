@@ -17,7 +17,7 @@ function authenticate(token) {
 
     jwt.verify(
       token.replace('Bearer ', ''),
-      new Buffer(AUTH0_SECRET, 'base64'),
+      AUTH0_SECRET,
       credentials,
       (err, res) => {
         if (err) {
