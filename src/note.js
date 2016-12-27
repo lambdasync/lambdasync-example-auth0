@@ -5,14 +5,18 @@ const SUCCESS = {
   result: 'success'
 };
 
-function getNote(db, id) {
+function getNote(db, id, userId) {
   const filter = {id};
   return new Promise((resolve, reject) => {
     db.collection(CONSTANTS.COLLECTION_NOTES).findOne(filter, (err, data) => {
       if (err) {
-        reject(err);
+        return reject(err);
       }
-      resolve(data);
+      // If a usedId is supplied check ownership
+      if (typeof userId !== 'undefined' && data.userId !== userId) {
+        return reject('Not authorized');
+      }
+      return resolve(data);
     });
   });
 }
@@ -50,7 +54,7 @@ function updateNote(db, userId, noteId, note) {
     return Promise.reject();
   }
 
-  return getNote(db, noteId)
+  return getNote(db, noteId, userId)
     .then(currentNote => new Promise((resolve, reject) => {
       db
         .collection(CONSTANTS.COLLECTION_NOTES)
