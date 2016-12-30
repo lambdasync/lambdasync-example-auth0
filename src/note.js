@@ -1,9 +1,7 @@
+'use strict';
 const uuid = require('node-uuid').v4;
 
 const CONSTANTS = require('./constants');
-const SUCCESS = {
-  result: 'success'
-};
 
 function getNote(db, id, userId) {
   const filter = {id};
@@ -47,7 +45,7 @@ function deleteNote(db, userId, noteId) {
           if (err) {
             return reject(err);
           }
-          return resolve(JSON.stringify(SUCCESS));
+          return resolve(JSON.stringify(CONSTANTS.SUCCESS_RESPONSE));
         });
     }));
 }
@@ -65,7 +63,7 @@ function updateNote(db, userId, noteId, note) {
           if (err) {
             return reject(err);
           }
-          return resolve(SUCCESS);
+          return resolve(CONSTANTS.SUCCESS_RESPONSE);
         });
     }));
 }
@@ -87,7 +85,7 @@ function addNote(db, userId, note) {
           if (err) {
             reject(err);
           }
-          resolve(JSON.stringify(SUCCESS));
+          resolve(JSON.stringify(CONSTANTS.SUCCESS_RESPONSE));
         }
       );
   });

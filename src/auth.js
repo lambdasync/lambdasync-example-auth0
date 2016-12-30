@@ -1,3 +1,4 @@
+'use strict';
 const jwt = require('jsonwebtoken');
 
 const AUTH0_DOMAIN = process.env.AUTH0_DOMAIN || null;
