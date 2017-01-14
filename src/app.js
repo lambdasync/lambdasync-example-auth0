@@ -26,10 +26,16 @@ function app(event, context, callback) {
 
 function handleRequest(db, userId, event, callback) {
   const noteId = util.getIdFromPath(event.path);
+  let body = null;
+  try {
+    body = JSON.parse(event.body);
+  } catch(err) {
+    // meh
+  }
 
   switch (event.httpMethod) {
     case 'POST':
-      return note.addNote(db, userId, event.body)
+      return note.addNote(db, userId, body)
         .then(res => respondAndClose(db, callback, res))
         .catch(err => respondAndClose(db, callback, err.message, STATUS_CODES.INTERNAL_SERVER_ERROR));
       break;
@@ -37,7 +43,7 @@ function handleRequest(db, userId, event, callback) {
       if (!noteId) {
         return respondAndClose(db, callback, 'Missing id parameter', STATUS_CODES.BAD_REQUEST);
       }
-      return note.updateNote(db, userId, noteId, event.body)
+      return note.updateNote(db, userId, noteId, body)
         .then(res => respondAndClose(db, callback, res))
         .catch(err => respondAndClose(db, callback, err.message, STATUS_CODES.INTERNAL_SERVER_ERROR));
       break;
@@ -50,7 +56,6 @@ function handleRequest(db, userId, event, callback) {
         .catch(err => respondAndClose(db, callback, err.message, STATUS_CODES.INTERNAL_SERVER_ERROR));
       break;
     case 'GET':
-    console.log('GET!');
       return note.getNotes(db, userId)
         .then(res => respondAndClose(db, callback, res))
         .catch(err => respondAndClose(db, callback, err.message, STATUS_CODES.INTERNAL_SERVER_ERROR));
