@@ -85,7 +85,7 @@ function addNote(db, userId, note) {
           if (err) {
             reject(err);
           }
-          resolve(JSON.stringify(CONSTANTS.SUCCESS_RESPONSE));
+          resolve(CONSTANTS.SUCCESS_RESPONSE);
         }
       );
   });
