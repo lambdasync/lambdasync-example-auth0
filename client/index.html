@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Auth0 demo</title>
+    <script src="https://cdn.auth0.com/js/lock/10.6/lock.min.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0" />
+    <style type="text/css">
+      button {
+        border-radius: 0px;
+        border: 1px solid #ccc;
+        padding: 4px;
+        background: #fff;
+      }
+      .note {
+        padding: 20px;
+        border: 1px solid #ccc;
+        margin-bottom: 20px;
+      }
+      .note-form {
+        background: #eee;
+        padding: 20px;
+        margin-bottom: 20px;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="app"></div>
+    <script>
+      var user = null;
+      var token = null;
+      var notes = null;
+      var app = document.querySelector('#app');
+
+      /****************************************
+      AUTH0 AUTHENTICATION
+      ****************************************/
+      var lock = new Auth0Lock(
+        'WWPZb1334tLKwx2NHbBIQ6P2SCjlOIft',
+        'fanderzon.eu.auth0.com'
+      );
+      // Persist tokens on login
+      lock.on("authenticated", function(authResult) {
+        // Use the token in authResult to getProfile() and save it to localStorage
+        lock.getProfile(authResult.idToken, function(error, profile) {
+          if (error) {
+            // Handle error
+            return;
+          }
+          console.log('authResult', authResult);
+          console.log('profile', profile);
+          localStorage.setItem('idToken', authResult.idToken);
+          localStorage.setItem('profile', JSON.stringify(profile));
+          user = profile;
+          token = authResult.idToken;
+          init();
+        });
+      });
+
+      if (localStorage.getItem('profile')) {
+        user = JSON.parse(localStorage.getItem('profile'));
+      }
+
+      if (localStorage.getItem('idToken')) {
+        token = localStorage.getItem('idToken');
+      }
+
+      /****************************************
+      LAMBDA API FUNCTIONS
+      ****************************************/
+
+      function apiSetup() {
+        var headers = new Headers();
+        if (token) {
+          headers.append('Authorization', 'Bearer ' + token);
+        }
+
+        return {
+          url: 'https://pb4686qfrj.execute-api.eu-west-1.amazonaws.com/prod/api',
+          headers
+        };
+      }
+
+      function fetchNotes() {
+        var {url, headers} = apiSetup();
+        return fetch(url, {
+          headers,
+        	method: 'get'
+        })
+          .then(res => res.json())
+          .then(res => {
+            notes = res;
+            return res;
+          });
+      }
+
+      function updateNote(id, title, text) {
+        var {url, headers} = apiSetup();
+        return fetch(`${url}/${id}`, {
+          headers,
+          method: 'put',
+          body: JSON.stringify({id, title, text})
+        })
+          .then(res => res.json());
+      }
+
+      function postNewNote(title, text) {
+        var {url, headers} = apiSetup();
+        return fetch(url, {
+          headers,
+          method: 'post',
+          body: JSON.stringify({title, text})
+        })
+          .then(res => res.json());
+      }
+
+      function deleteNote(noteId) {
+        var {url, headers} = apiSetup();
+        return fetch(`${url}/${noteId}`, {
+          headers,
+          method: 'delete'
+        })
+          .then(res => res.json());
+      }
+
+      /****************************************
+      APP ACTIONS
+      ****************************************/
+      function saveNote(id, title, text) {
+        let existingNote;
+        if (id) {
+          existingNote = notes.find(note => note.id === id)
+        }
+
+        let values = {};
+        if (id) {
+          values.id = id;
+        }
+        if (title) {
+          values.title = title;
+        }
+        if (text) {
+          values.text = text;
+        }
+
+        if (existingNote) {
+          return updateNote(id, title, text);
+        }
+
+        return postNewNote(title, text);
+      }
+
+      function removeNote(noteId) {
+        deleteNote(noteId)
+          .then(() => init());
+      }
+
+      function login() {
+        lock.show();
+      }
+
+      function logout() {
+        user = null;
+        token = null;
+        notes = null;
+        localStorage.removeItem('idToken');
+        localStorage.removeItem('profile');
+        render();
+      }
+
+      function init() {
+        if (token) {
+          fetchNotes()
+            .then(render)
+            .catch(err => console.error(err));
+        } else {
+          render();
+        }
+      }
+
+      /****************************************
+      UI RENDERING AND "COMPONENTS"
+      ****************************************/
+      function render(notes, activeNote) {
+        console.log('render', notes);
+        var noteList = user ? NoteList(notes) : '<p>Login to see your notes</p>';
+        return app.innerHTML = `
+          ${Login(user)}
+          ${NoteForm(activeNote)}
+          ${noteList}
+        `;
+      }
+
+      function Login(user) {
+        if (user) {
+          return `Logged in as: ${user.name} <button class="logout">Logout</button>`;
+        }
+        return '<button class="login">Login</button>';
+      }
+
+      function NoteList(notes) {
+        if (!Array.isArray(notes) || notes.length < 1) {
+          return '<p>No notes yet</p>';
+        }
+
+        return notes.reverse().map(({id,pinned,text,title,userId}) => `<div class="note">
+          <h2>${title}</h2>
+          <p>${text}</p>
+          <p>
+            <a href="#" class="edit" data-id="${id}">Edit</a> -
+            <a href="#" class="delete" data-id="${id}">Delete</a>
+          </p>
+        </div>`);
+      }
+
+      function NoteForm(note) {
+        var action = note ? 'Edit' : 'Add new';
+        note = note || {};
+        return `<div class="note-form">
+          <h2>${action} note</h2>
+          <input type="hidden" name="note-id" value="${note.id || ''}" />
+          <p>
+            <div>Title</div>
+            <input type="text" name="note-title" value="${note.title || ''}" />
+          </p>
+          <p>
+            <div>Text</div>
+            <textarea name="note-text" style="width: 100%; height: 150px">${note.text || ''}</textarea>
+          </p>
+          <p>
+            <button class="form-cancel">Cancel</button>
+            <button class="form-save">Save</button>
+          </p>
+        </div>`;
+      }
+
+      init();
+
+      document.addEventListener('click', e => {
+        var element = e.target;
+        var idField = document.querySelector('input[name=note-id]');
+        var titleField = document.querySelector('input[name=note-title]');
+        var textField = document.querySelector('textarea[name=note-text]');
+
+        switch (element.className) {
+          case 'login':
+            login();
+            break;
+          case 'logout':
+            logout();
+            break;
+          case 'form-cancel':
+            render(notes);
+            break;
+          case 'form-save':
+            var id = idField.value || null;
+            var title = titleField.value || null;
+            var text = textField.value || null;
+            saveNote(id, title, text)
+              .then(init);
+            break;
+          case 'edit':
+            var id = element.dataset.id;
+            var note = notes.find(note => note.id === id);
+            render(notes, note);
+            break;
+          case 'delete':
+            var id = element.dataset.id;
+            removeNote(id);
+            break;
+        }
+      })
+
+    </script>
+  </body>
+</html>
