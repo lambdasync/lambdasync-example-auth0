@@ -36,7 +36,7 @@ function respondAndClose(db, callback, response, statusCode) {
   return callback(null, formatResponse(statusCode, response));
 }
 
-const idRegex = /^\/api\/(.*?)(\/|$)/;
+const idRegex = /^\/(.*?)(\/|$)/;
 function getIdFromPath(path) {
   const match = idRegex.exec(path);
   return match && match[1];
