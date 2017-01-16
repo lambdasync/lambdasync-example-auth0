@@ -27,6 +27,9 @@
   <body>
     <div id="app"></div>
     <script>
+      var API_URL = 'YOUR_API_URL_HERE';
+      var AUTH0_CLIENT = 'YOUR_AUTH0_CLIENT_ID_HERE';
+      var AUTH0_DOMAIN = 'YOUR_AUTH0_DOMAIN_HERE';
       var user = null;
       var token = null;
       var notes = null;
@@ -36,8 +39,8 @@
       AUTH0 AUTHENTICATION
       ****************************************/
       var lock = new Auth0Lock(
-        'WWPZb1334tLKwx2NHbBIQ6P2SCjlOIft',
-        'fanderzon.eu.auth0.com'
+        AUTH0_CLIENT,
+        AUTH0_DOMAIN
       );
       // Persist tokens on login
       lock.on("authenticated", function(authResult) {
@@ -76,7 +79,7 @@
         }
 
         return {
-          url: 'https://pb4686qfrj.execute-api.eu-west-1.amazonaws.com/prod/api',
+          url: API_URL,
           headers
         };
       }

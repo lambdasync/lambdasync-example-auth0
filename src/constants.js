@@ -1,5 +1,5 @@
 'use strict';
-const COLLECTION_NOTES = 'personalNotes';
+const COLLECTION_NOTES = 'notes';
 const SUCCESS_RESPONSE = {
   result: 'success'
 };
